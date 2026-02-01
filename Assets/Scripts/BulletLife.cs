@@ -8,6 +8,7 @@ public class NewMonoBehaviourScript : MonoBehaviour
     public Material material2;
     public EntitySpawner spawnEnemy1Handler;
     public EntitySpawner spawnEnemy2Handler;
+    public AudioSource hitAudio;
 
     void Start()
     {
@@ -30,6 +31,7 @@ public class NewMonoBehaviourScript : MonoBehaviour
     private void OnTriggerEnter(Collider other) {
         bool part1 = other.gameObject.CompareTag("enemy1") && gameObject.CompareTag("bullet1");
         bool part2 = other.gameObject.CompareTag("enemy2") && gameObject.CompareTag("bullet2");
+        hitAudio.Play();
         if (part1 || part2) {
             if (other.gameObject.CompareTag("enemy1"))
             {

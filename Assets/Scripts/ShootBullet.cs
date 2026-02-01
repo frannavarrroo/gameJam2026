@@ -9,6 +9,8 @@ public class ShootBullet : MonoBehaviour
     private ElementsUI elementUI;
     public EntitySpawner spawnEnemy1Handler;
     public EntitySpawner spawnEnemy2Handler;
+    public AudioSource shotAudio;
+    public AudioSource hitAudio;
 
     void Start()
     {
@@ -21,6 +23,7 @@ public class ShootBullet : MonoBehaviour
         {
             Quaternion rotation = gunPoint.transform.rotation;
             instanceBullet = Instantiate(this.bullet,gunPoint.transform.position,gunPoint.transform.rotation);
+            shotAudio.Play();
             if (this.elementUI.imgMask1On())
             {
                 instanceBullet.tag = "bullet1";
@@ -30,6 +33,7 @@ public class ShootBullet : MonoBehaviour
                 instanceBullet.tag = "bullet2";
                 instanceBullet.GetComponent<NewMonoBehaviourScript>().spawnEnemy2Handler = spawnEnemy2Handler;
             }
+            instanceBullet.GetComponent<NewMonoBehaviourScript>().hitAudio = hitAudio;
         }
     }
 }

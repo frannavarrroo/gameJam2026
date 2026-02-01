@@ -1,50 +1,68 @@
 using UnityEngine;
-using UnityEngine.InputSystem; 
+using System.Collections;
+using System.Collections.Generic;
 
-/// <summary>
-/// Moves forward/backward and rotates with WASD/Arrow keys.
-/// </summary>
-public class PlayerMovement : MonoBehaviour
-{
-    [Tooltip("Forward/back speed (units/sec).")]
-    public float speed = 5.0f;
+public class PlayerController : MonoBehaviour {
+    public float WalkSpeed = 5f;
+    public float SprintMultiplier = 2f;
+    private float JumpForce = 60f;
+    private float GroundCheckDistance = 1f;
+    public float LookSensitivityX = 1f;
+    public float LookSensitivityY = 1f;
+    public float MinYLookAngle = -90f;
+    public float MaxYLookAngle = 90f;
+    public Transform PlayerCamera;
+    private float Gravity = -30f;
+    private Vector3 velocity;
+    private float verticalRotation = 0;
+    private CharacterController characterController;
 
-    [Tooltip("Turn speed (degrees/sec).")]
-    public float rotationSpeed = 120.0f;
-
-    private Rigidbody rb; 
-
-    private void Start()
-    {
+    void Awake() {
+        characterController = GetComponent<CharacterController>();
         Cursor.lockState = CursorLockMode.Locked;
-        rb = GetComponent<Rigidbody>();
-        if (rb == null) Debug.LogWarning("PlayerController needs a Rigidbody.");
     }
 
-    private void FixedUpdate() 
-    {
-        Vector2 moveInput = Vector2.zero;
+    void Update() {
+        float horizontalMovement = Input.GetAxisRaw("Horizontal");
+        float verticalMovement = Input.GetAxisRaw("Vertical");
 
-        // Forward/backward
-        if (Keyboard.current.wKey.isPressed || Keyboard.current.upArrowKey.isPressed)   moveInput.y = 1f;
-        if (Keyboard.current.sKey.isPressed || Keyboard.current.downArrowKey.isPressed) moveInput.y = -1f;
+        Vector3 moveDirection = transform.forward * verticalMovement + transform.right * horizontalMovement;
+        moveDirection.Normalize();
 
-        // Left/right (rotation)
-        if (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed) moveInput.x = -1f;
-        if (Keyboard.current.dKey.isPressed || Keyboard.current.rightArrowKey.isPressed)moveInput.x = 1f;
+        float speed = WalkSpeed;
 
-        // Move in facing direction 
-        Vector3 movement = transform.forward * moveInput.y * speed * Time.deltaTime;
-        rb.MovePosition(rb.position + movement);
+        if (Input.GetAxis("Sprint") > 0) {
+            speed *= SprintMultiplier;
+        }
 
-        // Y-axis rotation (invert when going backwards)
-        float turnDirection = moveInput.x;
-        if (moveInput.y < 0)
-            turnDirection = -turnDirection;
+        characterController.Move(moveDirection * speed * Time.deltaTime);
+        if (Input.GetButtonDown("Jump") && IsGrounded()) {
+            velocity.y += JumpForce;
+            Debug.Log(velocity.y);
+            Debug.Log(velocity.y);
+        } else {
+            velocity.y = Gravity * Time.deltaTime;
+        }
 
-        float turn = turnDirection * rotationSpeed * Time.fixedDeltaTime;
-        Quaternion turnRotation = Quaternion.Euler(0f, turn, 0f);
-        rb.MoveRotation(rb.rotation * turnRotation);
-    } 
+        characterController.Move(velocity * Time.deltaTime);
+
+        if (PlayerCamera != null) {
+            float mouseX = Input.GetAxis("Mouse X") * LookSensitivityX;
+            float mousey = Input.GetAxis("Mouse Y") * LookSensitivityY;
+
+            verticalRotation -= mousey;
+            verticalRotation = Mathf.Clamp(verticalRotation, MinYLookAngle, MaxYLookAngle);
+
+            PlayerCamera.localRotation = Quaternion.Euler(verticalRotation, 0f, 0f);
+            transform.Rotate(Vector3.up * mouseX);
+        }
+    }
+
+    bool IsGrounded() {
+        RaycastHit hit;
+        if (Physics.Raycast(transform.position, Vector3.down, out hit, GroundCheckDistance)) {
+            return true;
+        }
+        return false;
+    }
 }
-
